@@ -1,7 +1,5 @@
-
 from flask import Flask, render_template, request, jsonify
 import sqlite3
-from datetime import datetime
 
 app = Flask(__name__)
 DATABASE = 'bookings.db'
@@ -76,9 +74,6 @@ def api_todos():
     conn.close()
     return jsonify(todos)
 
-if __name__ == "__main__":
-    app.run(debug=True)
-
 @app.route("/add_booking", methods=["GET", "POST"])
 def add_booking():
     conn = get_db()
@@ -117,3 +112,6 @@ def edit_booking(booking_id):
         conn.close()
         return render_template("success.html", message="Booking updated successfully.")
     return render_template("booking_form.html", drivers=drivers, booking=booking)
+
+if __name__ == "__main__":
+    app.run(debug=True)
