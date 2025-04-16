@@ -2,50 +2,73 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>{% block title %}Production Autos{% endblock %}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/style.css">
-    <style>
-        body { display: flex; min-height: 100vh; margin: 0; }
-        .sidebar {
-            width: 220px;
-            background: #f8f9fa;
-            padding: 20px;
-            border-right: 1px solid #ddd;
-        }
-        .sidebar h4 {
-            font-weight: bold;
-            margin-bottom: 1rem;
-        }
-        .sidebar a {
-            display: block;
-            padding: 8px 0;
-            color: #333;
-            text-decoration: none;
-        }
-        .sidebar a:hover {
-            background: #e2e6ea;
-            padding-left: 5px;
-        }
-        .main {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Vehicle Booking System{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.css" rel="stylesheet">
+    {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <div class="sidebar">
-        <h4>Production Autos</h4>
-        <a href="/">Dashboard</a>
-        <a href="/calendar">Calendar</a>
-        <a href="/vehicles">Vehicles</a>
-        <a href="/drivers">Drivers</a>
-        <a href="/reports">Reports</a>
-    </div>
-    <div class="main">
+    <!-- Navigation Bar -->
+    {% if session.get('user_id') %}
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('index') }}">Vehicle Booking System</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('index') }}">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('calendar') }}">Calendar</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('vehicles') }}">Vehicles</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('drivers') }}">Drivers</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('reports') }}">Reports</a>
+                    </li>
+                    {% if session.get('role') == 'admin' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('auth.users') }}">Users</a>
+                    </li>
+                    {% endif %}
+                </ul>
+                <div class="navbar-text me-3 text-light">
+                    {{ username }} ({{ session.get('role', 'user') }})
+                </div>
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('auth.logout') }}">Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    {% endif %}
+    
+    <!-- Main Content -->
+    <main>
         {% block content %}{% endblock %}
-    </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="footer mt-auto py-3 bg-light">
+        <div class="container text-center">
+            <span class="text-muted">&copy; 2025 Vehicle Booking System</span>
+        </div>
+    </footer>
+    
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    {% block extra_js %}{% endblock %}
 </body>
 </html>
