@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% block title %}Calendar - Production Autos{% endblock %}
+{% block content %}
+<h1 class="mb-4">Booking Calendar</h1>
+<div id='calendar'></div>
+
+<!-- Enhanced Modal -->
+<div id="bookingModal" class="modal" tabindex="-1" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:white; padding:25px; border-radius:8px; box-shadow:0 0 20px rgba(0,0,0,0.4); z-index:1000; max-width:600px; width:90%;">
+    <h5 class="mb-3">Bookings for <span id="modalDate"></span></h5>
+    <div id="modalContent"></div>
+    <div class="mt-4 text-end">
+        <a href="/add_booking" class="btn btn-success btn-sm me-2">+ Add Booking</a>
+        <button class="btn btn-outline-primary btn-sm" onclick="saveDriverChanges()">Save Changes</button>
+        <button class="btn btn-secondary btn-sm" onclick="closeModal()">Close</button>
+    </div>
+</div>
+
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
+<script>
+let driverMap = {};
+let bookingsById = {};
+
+function closeModal() {
+    document.getElementById('bookingModal').style.display = 'none';
+}
+
+async function saveDriverChanges() {
+    const selects = document.querySelectorAll('select[data-booking-id]');
+    for (const select of selects) {
+        const bookingId = select.dataset.bookingId;
+        const selectedDriver = select.value;
+        if (bookingsById[bookingId].driver !== selectedDriver) {
+            await fetch('/api/update_driver', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ booking_id: bookingId, new_driver: selectedDriver })
+            });
+        }
+    }
+    alert("Driver changes saved!");
+    closeModal();
+    location.reload();
+}
+
+document.addEventListener('DOMContentLoaded', async function () {
+    try {
+        const driverRes = await fetch('/api/drivers');
+        const drivers = await driverRes.json();
+        drivers.forEach(d => { driverMap[d.name] = d.name; });
+
+        const calendarEl = document.getElementById('calendar');
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            height: 650,
+            events: '/api/productions',
+            eventColor: '#007bff',
+            dateClick: async function(info) {
+                try {
+                    const res = await fetch('/api/bookings_by_date', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ date: info.dateStr })
+                    });
+                    const data = await res.json();
+                    bookingsById = {};
+                    const container = document.getElementById('modalContent');
+                    document.getElementById('modalDate').textContent = info.dateStr;
+                    container.innerHTML = '';
+
+                    if (!data.length) {
+                        container.innerHTML = "<p>No bookings for this day.</p>";
+                    } else {
+                        const grouped = {};
+                        data.forEach(b => {
+                            bookingsById[b.id] = b;
+                            if (!grouped[b.production]) grouped[b.production] = [];
+                            grouped[b.production].push(b);
+                        });
+
+                        for (const [prod, bookings] of Object.entries(grouped)) {
+                            const block = document.createElement('div');
+                            block.className = "mb-3";
+                            block.innerHTML = `<h6>${prod}</h6>`;
+                            bookings.forEach(b => {
+                                const item = document.createElement('div');
+                                item.className = "border p-2 mb-2 rounded bg-light";
+                                item.innerHTML = `
+                                    <div><strong>Vehicle:</strong> ${b.vehicle}</div>
+                                    <div><strong>Driver:</strong>
+                                        <select class="form-select form-select-sm w-auto d-inline" data-booking-id="${b.id}">
+                                            ${Object.keys(driverMap).map(d => `<option value="${d}" ${d === b.driver ? 'selected' : ''}>${d}</option>`).join('')}
+                                        </select>
+                                    </div>
+                                    <div><strong>Call:</strong> ${b.call_time} | <strong>Wrap:</strong> ${b.wrap_time}</div>
+                                    <div><strong>Notes:</strong> ${b.notes || '—'}</div>
+                                `;
+                                block.appendChild(item);
+                            });
+                            container.appendChild(block);
+                        }
+                    }
+
+                    document.getElementById('bookingModal').style.display = 'block';
+                } catch (err) {
+                    alert("Error loading bookings: " + err);
+                }
+            }
+        });
+        calendar.render();
+    } catch (e) {
+        alert("Calendar setup failed: " + e);
+    }
+});
+</script>
+{% endblock %}

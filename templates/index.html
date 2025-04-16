@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard | Production Autos{% endblock %}
+{% block content %}
+<h1 class="mb-4">Dashboard</h1>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <span>Today's Bookings</span>
+                <a href="/add_booking" class="btn btn-sm btn-light">+ New Booking</a>
+            </div>
+            <div class="card-body">
+                <ul id="todayBookings" class="list-unstyled mb-0"></ul>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header bg-warning text-dark">Reminders</div>
+            <div class="card-body">
+                <ul>
+                    <li>Vehicle ABC123 MOT due in 3 days <button class="btn btn-sm btn-outline-dark btn-sm">Action</button></li>
+                    <li>Driver Jane Doe license expiring soon <button class="btn btn-sm btn-outline-dark btn-sm">Action</button></li>
+                    <li>Vehicle XYZ789 needs road tax renewal <button class="btn btn-sm btn-outline-dark btn-sm">Action</button></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+        <span>To-Do List</span>
+        <button class="btn btn-sm btn-light" onclick="alert('Add to-do form coming soon')">+ New Task</button>
+    </div>
+    <div class="card-body">
+        <ul id="todoList" class="list-group"></ul>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', async function () {
+    const today = new Date().toISOString().split('T')[0];
+
+    // Load today's bookings
+    const bookingsRes = await fetch('/api/bookings_by_date', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ date: today })
+    });
+    const bookings = await bookingsRes.json();
+    const bookingsList = document.getElementById('todayBookings');
+    if (bookings.length) {
+        bookings.forEach(b => {
+            const item = document.createElement('li');
+            item.className = "mb-2";
+            item.innerHTML = `<strong>${b.production}</strong> — ${b.vehicle} with ${b.driver} (${b.call_time}–${b.wrap_time})
+                              <a href="/edit_booking/${b.id}" class="btn btn-sm btn-outline-primary ms-2">Edit</a>`;
+            bookingsList.appendChild(item);
+        });
+    } else {
+        bookingsList.innerHTML = "<li>No bookings today.</li>";
+    }
+
+    // Load to-do list
+    const todoRes = await fetch('/api/todos');
+    const todos = await todoRes.json();
+    const todoList = document.getElementById('todoList');
+    if (todos.length) {
+        todos.forEach(t => {
+            const li = document.createElement('li');
+            li.className = "list-group-item d-flex justify-content-between align-items-center";
+            li.innerHTML = `
+                <span>
+                    ${t.task} <small class="text-muted">(Assigned to: ${t.assigned_to})</small>
+                </span>
+                <button class="btn btn-sm btn-outline-secondary">Edit</button>
+            `;
+            todoList.appendChild(li);
+        });
+    } else {
+        todoList.innerHTML = "<li class='list-group-item'>No tasks.</li>";
+    }
+});
+</script>
+{% endblock %}
